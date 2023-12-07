@@ -12,9 +12,6 @@ def neighbour_symbols(digit, env):
 
 def interprete(digit, env) -> int:
     number = int("".join(env[digit[0][0]][digit[0][1] + j] for j in range(digit[1])))
-    if number == 117:
-        print("found", digit)
-        print(neighbour_symbols(digit, env))
     return number
 
 
@@ -34,7 +31,7 @@ def part1(input: str) -> str:
                 if length_current_digit == 0:
                     start_digit = (i, j)
                 length_current_digit += 1
-                if j == len(engine_schematic[i]):
+                if j == len(engine_schematic[i]) - 1:
                     digit = start_digit, length_current_digit
                     number = interprete(digit, engine_schematic)
                     digits.append((start_digit, length_current_digit))
@@ -51,8 +48,46 @@ def part1(input: str) -> str:
     return str(res)
 
 
+class Gear:
+    def __init__(self, num1, num2):
+        self.part_number_1 = num1
+        self.part_number_2 = num2
+
+    def gear_ratio(self) -> int:
+        return self.part_number_1 * self.part_number_2
+
+
+import re
+
+
+def find_gears(engine_schematic: list[str]) -> list[Gear]:
+    gears = []
+    max_y = len(engine_schematic)
+
+    # Iterate through each line and character in the schematic
+    for y in range(max_y):
+        for m in re.finditer(r"\*", engine_schematic[y]):
+            adjacent_part_number = []
+
+            # Check the current and adjacent lines for part numbers near the gear
+            for dy in [-1, 0, 1]:
+                if 0 <= y + dy < max_y:
+                    for n in re.finditer(r"\d+", engine_schematic[y + dy]):
+                        if m.start() in range(n.start() - 1, n.end() + 1):
+                            adjacent_part_number.append(int(n.group(0)))
+
+            # Create a Gear object if exactly two part numbers are found adjacent to the gear
+            if len(adjacent_part_number) == 2:
+                gears.append(Gear(adjacent_part_number[0], adjacent_part_number[1]))
+
+    return gears
+
+
 def part2(input: str) -> str:
-    return ""
+    engine_schematic = input.split("\n")
+    engine_schematic.pop()
+    res = sum([g.gear_ratio() for g in find_gears(engine_schematic)])
+    return str(res)
 
 
 if __name__ == "__main__":
